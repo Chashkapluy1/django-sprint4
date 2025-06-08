@@ -8,16 +8,16 @@ urlpatterns = [
     path('', views.PostListView.as_view(), name='index'),
 
     # Страница с деталями поста
-    path('posts/<int:pk>/', views.PostDetailView.as_view(),
+    path('posts/<int:post_id>/', views.PostDetailView.as_view(),
          name='post_detail'),
 
     # Страница для редактирования комментария
-    path('posts/<int:pk>/comment/<int:comment_id>/edit_comment/',
+    path('posts/<int:post_id>/comment/<int:comment_id>/edit_comment/',
          views.CommentUpdateView.as_view(),
          name='edit_comment'),
 
     # Страница для удаления комментария
-    path('posts/<int:pk>/comment/<int:comment_id>/delete_comment/',
+    path('posts/<int:post_id>/comment/<int:comment_id>/delete_comment/',
          views.CommentDeleteView.as_view(),
          name='delete_comment'),
 
@@ -30,11 +30,11 @@ urlpatterns = [
          name='create_post'),
 
     # Страница для удаления поста
-    path('posts/<int:pk>/delete/', views.PostDeleteView.as_view(),
+    path('posts/<int:post_id>/delete/', views.PostDeleteView.as_view(),
          name='delete_post'),
 
     # Страница для добавления комментария
-    path('posts/<int:pk>/comment/', views.CommentCreateView.as_view(),
+    path('posts/<int:post_id>/comment/', views.CommentCreateView.as_view(),
          name='add_comment'),
 
     # Страница редактирования профиля.
@@ -46,6 +46,6 @@ urlpatterns = [
          name='profile'),
 
     # Редактирование поста
-    path('posts/<int:pk>/edit/', views.PostUpdateView.as_view(),
+    path('posts/<int:post_id>/edit/', views.PostUpdateView.as_view(),
          name='edit_post'),
 ]

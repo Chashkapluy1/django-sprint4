@@ -5,7 +5,7 @@ from django.urls import reverse
 User = get_user_model()
 
 
-class BaseModel(models.Model):
+class BasePublicationModel(models.Model):
     """Базовая модель для публикаций."""
 
     is_published = models.BooleanField(
@@ -19,17 +19,16 @@ class BaseModel(models.Model):
         verbose_name='Добавлено'
     )
 
-    def short_str(self, field: str, max_len: int = 50) -> str:
-        value = getattr(self, field)
-        if len(value) > max_len:
-            return f'{value[:max_len]}...'
-        return value
-
     class Meta:
         abstract = True
 
+    def __str__(self):
+        publication_status = f"Published: {self.is_published}"
+        creation_date = f"Created at: {self.created_at:%Y-%m-%d %H:%M}"
+        return f"{publication_status}, {creation_date}"
 
-class Location(BaseModel):
+
+class Location(BasePublicationModel):
     """Модель местоположения."""
 
     name = models.CharField(
@@ -40,13 +39,13 @@ class Location(BaseModel):
     class Meta:
         verbose_name = 'местоположение'
         verbose_name_plural = 'Местоположения'
-        ordering = ['name']
+        ordering = ('name',)  # Используем кортеж
 
     def __str__(self):
-        return self.short_str('name')
+        return f"{self.name[:50]} ({self.created_at:%Y-%m-%d})"
 
 
-class Category(BaseModel):
+class Category(BasePublicationModel):
     """Модель категории для публикаций."""
 
     title = models.CharField(
@@ -64,13 +63,13 @@ class Category(BaseModel):
     class Meta:
         verbose_name = 'категория'
         verbose_name_plural = 'Категории'
-        ordering = ['title']
+        ordering = ('title',)  # Используем кортеж
 
     def __str__(self):
-        return self.short_str('title')
+        return f"{self.title[:50]} ({self.created_at:%Y-%m-%d})"
 
 
-class Post(BaseModel):
+class Post(BasePublicationModel):
     """Модель публикации."""
 
     title = models.CharField(
@@ -113,10 +112,10 @@ class Post(BaseModel):
         default_related_name = 'posts'
 
     def get_absolute_url(self):
-        return reverse('blog:post_detail', kwargs={'pk': self.pk})
+        return reverse('blog:post_detail', args=[self.pk])
 
     def __str__(self):
-        return self.short_str('title')
+        return f"{self.title[:50]} ({self.created_at:%Y-%m-%d})"
 
 
 class Comment(models.Model):
@@ -125,14 +124,16 @@ class Comment(models.Model):
     post = models.ForeignKey(
         Post,
         on_delete=models.CASCADE,
-        verbose_name='Пост'
+        verbose_name='Пост',
+        related_name='comments'
     )
     author = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
-        verbose_name='Автор'
+        verbose_name='Автор',
+        related_name='comments'
     )
-    text = models.TextField('Текст комментария')
+    text = models.TextField('Текст')
     created_at = models.DateTimeField(
         'Дата и время создания',
         auto_now_add=True
@@ -144,4 +145,6 @@ class Comment(models.Model):
         ordering = ('created_at',)
 
     def __str__(self):
-        return f'{self.author.username}: {self.created_at:%Y-%m-%d %H:%M}'
+        comment_info = f'{self.author.username}: {self.text[:50]}...'
+        creation_date = f'({self.created_at:%Y-%m-%d %H:%M})'
+        return f'{comment_info} {creation_date}'
