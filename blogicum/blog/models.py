@@ -39,7 +39,7 @@ class Location(BasePublicationModel):
     class Meta:
         verbose_name = 'местоположение'
         verbose_name_plural = 'Местоположения'
-        ordering = ('name',)  # Используем кортеж
+        ordering = ('name',)
 
     def __str__(self):
         return f"{self.name[:50]} ({self.created_at:%Y-%m-%d})"
@@ -63,7 +63,7 @@ class Category(BasePublicationModel):
     class Meta:
         verbose_name = 'категория'
         verbose_name_plural = 'Категории'
-        ordering = ('title',)  # Используем кортеж
+        ordering = ('title',)
 
     def __str__(self):
         return f"{self.title[:50]} ({self.created_at:%Y-%m-%d})"
@@ -119,7 +119,7 @@ class Post(BasePublicationModel):
 
 
 class Comment(models.Model):
-    """Модель комментария, привязанного к посту."""
+    """Модель комментария."""
 
     post = models.ForeignKey(
         Post,

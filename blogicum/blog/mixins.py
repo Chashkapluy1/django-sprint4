@@ -41,7 +41,7 @@ class OwnerRequiredMixin:
 
 def apply_published_filter(posts, include_category=True,
                            include_location=True, **extra_filters):
-    """Фильтрация опубликованных постов с дополнительными параметрами."""
+    """Фильтрация опубликованных постов."""
     filter_conditions = {
         'is_published': True,
         'category__is_published': True,

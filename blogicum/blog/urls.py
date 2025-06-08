@@ -37,11 +37,11 @@ urlpatterns = [
     path('posts/<int:post_id>/comment/', views.CommentCreateView.as_view(),
          name='add_comment'),
 
-    # Страница редактирования профиля.
+    # Страница редактирования профиля
     path('profile/edit/', views.ProfileEditView.as_view(),
          name='edit_profile'),
 
-    # Страница профиля пользователя.
+    # Страница профиля пользователя
     path('profile/<str:username>/', views.ProfileView.as_view(),
          name='profile'),
 
