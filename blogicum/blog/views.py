@@ -147,7 +147,6 @@ class ProfileView(BasePostMixin, ListView):
     paginate_by = PAGINATE_BY
 
     def get_user(self):
-        """Метод для получения пользователя по имени."""
         return get_object_or_404(User, username=self.kwargs["username"])
 
     def get_queryset(self):
