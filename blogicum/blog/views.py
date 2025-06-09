@@ -22,6 +22,9 @@ from .mixins import (
 from .models import Category, Comment, Post, User
 
 
+PAGINATE_BY = 10
+
+
 def apply_published_filter(posts, include_category=True,
                            include_location=True, **extra_filters):
     """Фильтрация опубликованных постов."""
@@ -31,12 +34,12 @@ def apply_published_filter(posts, include_category=True,
         "pub_date__lte": timezone.now(),
     }
     filter_conditions.update(extra_filters)
-    queryset = posts.filter(**filter_conditions)
+    filtered_posts = posts.filter(**filter_conditions)
     if include_category:
-        queryset = queryset.select_related("category")
+        filtered_posts = filtered_posts.select_related("category")
     if include_location:
-        queryset = queryset.select_related("location")
-    return queryset
+        filtered_posts = filtered_posts.select_related("location")
+    return filtered_posts
 
 
 class PostListView(ListView):
@@ -45,14 +48,13 @@ class PostListView(ListView):
     model = Post
     template_name = "blog/index.html"
     context_object_name = "post_list"
-    paginate_by = 10
+    paginate_by = PAGINATE_BY
 
     def get_queryset(self):
-        posts = Post.objects.all()
-        queryset = apply_published_filter(posts)
-        return queryset.annotate(comment_count=Count("comments")).order_by(
-            "-pub_date"
-        )
+        all_posts = Post.objects.all()
+        published_posts = apply_published_filter(all_posts)
+        return published_posts.annotate(
+            comment_count=Count("comments")).order_by("-pub_date")
 
 
 class CategoryPostsView(ListView):
@@ -61,7 +63,7 @@ class CategoryPostsView(ListView):
     model = Post
     template_name = "blog/category.html"
     context_object_name = "post_list"
-    paginate_by = 10
+    paginate_by = PAGINATE_BY
 
     def get_category(self):
         return get_object_or_404(
@@ -70,11 +72,10 @@ class CategoryPostsView(ListView):
 
     def get_queryset(self):
         category = self.get_category()
-        posts = category.posts.all()
-        queryset = apply_published_filter(posts)
-        return queryset.annotate(comment_count=Count("comments")).order_by(
-            "-pub_date"
-        )
+        category_posts = category.posts.all()
+        filtered_category_posts = apply_published_filter(category_posts)
+        return filtered_category_posts.annotate(
+            comment_count=Count("comments")).order_by("-pub_date")
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -88,7 +89,7 @@ class PostDetailView(BasePostMixin, DetailView):
     template_name = "blog/detail.html"
     pk_url_kwarg = "post_id"
 
-    def get_object(self, queryset=None):
+    def get_object(self):
         post = get_object_or_404(Post, pk=self.kwargs["post_id"])
         if not post.is_published and self.request.user != post.author:
             raise Http404
@@ -142,13 +143,13 @@ class ProfileView(BasePostMixin, ListView):
     """Профиль пользователя."""
 
     template_name = "blog/profile.html"
-    paginate_by = 10
+    paginate_by = PAGINATE_BY
 
     def get_queryset(self):
         self.user = get_object_or_404(User, username=self.kwargs["username"])
-        posts = self.user.posts.all()
+        user_posts = self.user.posts.all()
         return (
-            posts.select_related("category", "location")
+            user_posts.select_related("category", "location")
             .annotate(comment_count=Count("comments"))
             .order_by("-pub_date")
         )
@@ -171,7 +172,7 @@ class ProfileEditView(LoginRequiredMixin, UpdateView):
     template_name = "blog/user.html"
     fields = ["first_name", "last_name", "username", "email"]
 
-    def get_object(self, queryset=None):
+    def get_object(self):
         return self.request.user
 
     def get_success_url(self):

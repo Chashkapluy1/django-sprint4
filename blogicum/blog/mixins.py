@@ -40,7 +40,7 @@ class OwnerRequiredMixin:
 
 
 class CommentBaseMixin(LoginRequiredMixin):
-    """Работа с комментариями."""
+    """Миксин для работы с комментариями."""
 
     model = Comment
     form_class = CommentForm
@@ -50,7 +50,7 @@ class CommentBaseMixin(LoginRequiredMixin):
 
 
 class CommentObjectMixin:
-    """Конкретный комментарий."""
+    """Миксин для получения конкретного комментария."""
 
     model = Comment
     slug_field = "comment_id"
