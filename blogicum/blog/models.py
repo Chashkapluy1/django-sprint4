@@ -23,9 +23,7 @@ class BasePublicationModel(models.Model):
         abstract = True
 
     def __str__(self):
-        publication_status = f"Published: {self.is_published}"
-        creation_date = f"Created at: {self.created_at:%Y-%m-%d %H:%M}"
-        return f"{publication_status}, {creation_date}"
+        return f'{self.is_published=}, {self.created_at=}'
 
 
 class Location(BasePublicationModel):
@@ -42,7 +40,7 @@ class Location(BasePublicationModel):
         ordering = ('name',)
 
     def __str__(self):
-        return f"{self.name[:50]} ({self.created_at:%Y-%m-%d})"
+        return f'{self.name[:50]} ({self.created_at:%Y-%m-%d})'
 
 
 class Category(BasePublicationModel):
@@ -66,7 +64,7 @@ class Category(BasePublicationModel):
         ordering = ('title',)
 
     def __str__(self):
-        return f"{self.title[:50]} ({self.created_at:%Y-%m-%d})"
+        return f'{self.title[:50]} ({self.created_at:%Y-%m-%d})'
 
 
 class Post(BasePublicationModel):
@@ -115,7 +113,7 @@ class Post(BasePublicationModel):
         return reverse('blog:post_detail', args=[self.pk])
 
     def __str__(self):
-        return f"{self.title[:50]} ({self.created_at:%Y-%m-%d})"
+        return f'{self.title[:50]} ({self.created_at:%Y-%m-%d})'
 
 
 class Comment(models.Model):
@@ -125,13 +123,11 @@ class Comment(models.Model):
         Post,
         on_delete=models.CASCADE,
         verbose_name='Пост',
-        related_name='comments'
     )
     author = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
         verbose_name='Автор',
-        related_name='comments'
     )
     text = models.TextField('Текст')
     created_at = models.DateTimeField(
@@ -143,6 +139,7 @@ class Comment(models.Model):
         verbose_name = 'комментарий'
         verbose_name_plural = 'Комментарии'
         ordering = ('created_at',)
+        default_related_name = 'comments'
 
     def __str__(self):
         comment_info = f'{self.author.username}: {self.text[:50]}...'

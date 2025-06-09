@@ -36,7 +36,7 @@ class OwnerRequiredMixin:
             kwargs.get(self.redirect_post_id_kwarg)
             or self.kwargs.get(self.redirect_post_id_kwarg)
         )
-        return reverse(self.redirect_view_name, kwargs={"post_id": post_id})
+        return reverse(self.redirect_view_name, args=[post_id])
 
 
 class CommentBaseMixin(LoginRequiredMixin):
@@ -53,5 +53,5 @@ class CommentObjectMixin:
     """Миксин для получения конкретного комментария."""
 
     model = Comment
-    slug_field = "comment_id"
-    slug_url_kwarg = "comment_id"
+    lookup_field = "id"
+    lookup_url_kwarg = "comment_id"
