@@ -17,9 +17,6 @@ class BasePostMixin:
 class OwnerRequiredMixin:
     """Проверка на владельца."""
 
-    redirect_view_name = None
-    redirect_post_id_kwarg = "post_id"
-
     def dispatch(self, request, *args, **kwargs):
         try:
             obj = self.get_object()
@@ -32,11 +29,8 @@ class OwnerRequiredMixin:
         return super().dispatch(request, *args, **kwargs)
 
     def get_redirect_url(self, **kwargs):
-        post_id = (
-            kwargs.get(self.redirect_post_id_kwarg)
-            or self.kwargs.get(self.redirect_post_id_kwarg)
-        )
-        return reverse(self.redirect_view_name, args=[post_id])
+        post_id = kwargs.get('post_id') or self.kwargs.get('post_id')
+        return reverse('blog:post_detail', args=[post_id])
 
 
 class CommentBaseMixin(LoginRequiredMixin):

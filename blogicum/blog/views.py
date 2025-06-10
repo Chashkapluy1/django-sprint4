@@ -1,6 +1,5 @@
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db.models import Count
-from django.http import Http404
 from django.shortcuts import get_object_or_404
 from django.urls import reverse, reverse_lazy
 from django.utils import timezone
@@ -81,7 +80,8 @@ class PostDetailView(BasePostMixin, DetailView):
         post = super().get_object()
         if self.request.user == post.author:
             return post
-        return super().get_object(queryset=Post.objects.filter(is_published=True))
+        return super().get_object(
+            queryset=Post.objects.filter(is_published=True))
 
     def get_context_data(self, **kwargs):
         return super().get_context_data(
@@ -109,7 +109,6 @@ class PostUpdateView(BasePostMixin, OwnerRequiredMixin, UpdateView):
     """Редактирование поста."""
 
     pk_url_kwarg = "post_id"
-    redirect_view_name = "blog:post_detail"
     form_class = PostForm
     template_name = "blog/create.html"
 
@@ -125,7 +124,6 @@ class PostDeleteView(BasePostMixin, LoginRequiredMixin,
     template_name = "blog/create.html"
     success_url = reverse_lazy("blog:index")
     pk_url_kwarg = "post_id"
-    redirect_view_name = "blog:post_detail"
 
 
 class ProfileView(BasePostMixin, ListView):
@@ -134,24 +132,20 @@ class ProfileView(BasePostMixin, ListView):
     template_name = "blog/profile.html"
     paginate_by = PAGINATE_BY
 
-    def get_user(self):
+    def get_author(self):
         return get_object_or_404(User, username=self.kwargs["username"])
 
     def get_queryset(self):
-        user = self.get_user()
-        posts = (
-            user.posts.all() if self.request.user == user
-            else filter_and_annotate_posts(user.posts.all())
-        )
-        return posts.select_related("category", "location").annotate(
-            comment_count=Count("comments")
-        ).order_by("-pub_date")
+        author = self.get_author()
+        if self.request.user == author:
+            return author.posts.all()
+        return filter_and_annotate_posts(author.posts.all())
 
     def get_context_data(self, **kwargs):
         return super().get_context_data(
             **kwargs,
-            profile=self.get_user(),
-            is_owner=self.request.user == self.get_user()
+            profile=self.get_author(),
+            is_owner=self.request.user == self.get_author()
         )
 
 
@@ -184,8 +178,6 @@ class CommentUpdateView(CommentBaseMixin, OwnerRequiredMixin,
 
     template_name = "blog/comment.html"
     pk_url_kwarg = "comment_id"
-    redirect_view_name = "blog:post_detail"
-    redirect_pk_kwarg = "post_id"
 
 
 class CommentDeleteView(LoginRequiredMixin, OwnerRequiredMixin,
@@ -195,9 +187,6 @@ class CommentDeleteView(LoginRequiredMixin, OwnerRequiredMixin,
     model = Comment
     template_name = "blog/comment.html"
     pk_url_kwarg = "comment_id"
-    redirect_view_name = "blog:post_detail"
-    redirect_pk_kwarg = "post_id"
 
     def get_success_url(self):
-        return reverse(self.redirect_view_name,
-                       args=[self.kwargs[self.redirect_pk_kwarg]])
+        return reverse("blog:post_detail", args=[self.kwargs['post_id']])
