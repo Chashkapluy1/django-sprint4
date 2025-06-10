@@ -11,7 +11,7 @@ class BasePostMixin:
     """Базовый миксин для публикаций."""
 
     model = Post
-    context_object_name = "post"
+    context_object_name = 'post'
 
 
 class OwnerRequiredMixin:
@@ -25,12 +25,8 @@ class OwnerRequiredMixin:
         except Exception:
             raise Http404
         if obj.author != request.user:
-            return redirect(self.get_redirect_url(**kwargs))
+            return redirect('blog:post_detail', post_id=self.kwargs['post_id'])
         return super().dispatch(request, *args, **kwargs)
-
-    def get_redirect_url(self, **kwargs):
-        post_id = kwargs.get('post_id') or self.kwargs.get('post_id')
-        return reverse('blog:post_detail', args=[post_id])
 
 
 class CommentBaseMixin(LoginRequiredMixin):
@@ -40,11 +36,11 @@ class CommentBaseMixin(LoginRequiredMixin):
     form_class = CommentForm
 
     def get_success_url(self):
-        return reverse("blog:post_detail", args=[self.kwargs["post_id"]])
+        return reverse('blog:post_detail', args=[self.kwargs['post_id']])
 
 
 class CommentObjectMixin:
     """Миксин для получения конкретного комментария."""
 
     model = Comment
-    pk_url_kwarg = "comment_id"
+    pk_url_kwarg = 'comment_id'
