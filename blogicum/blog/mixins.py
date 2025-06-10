@@ -53,5 +53,4 @@ class CommentObjectMixin:
     """Миксин для получения конкретного комментария."""
 
     model = Comment
-    lookup_field = "id"
-    lookup_url_kwarg = "comment_id"
+    pk_url_kwarg = "comment_id"

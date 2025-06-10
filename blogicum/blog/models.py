@@ -23,7 +23,7 @@ class BasePublicationModel(models.Model):
         abstract = True
 
     def __str__(self):
-        return f'{self.is_published=}, {self.created_at=}'
+        return f'{self.created_at:%Y-%m-%d}'
 
 
 class Location(BasePublicationModel):
@@ -40,7 +40,7 @@ class Location(BasePublicationModel):
         ordering = ('name',)
 
     def __str__(self):
-        return f'{self.name[:50]} ({self.created_at:%Y-%m-%d})'
+        return f'{self.name[:50]} ({super().__str__()})'
 
 
 class Category(BasePublicationModel):
@@ -64,7 +64,7 @@ class Category(BasePublicationModel):
         ordering = ('title',)
 
     def __str__(self):
-        return f'{self.title[:50]} ({self.created_at:%Y-%m-%d})'
+        return f'{self.title[:50]} ({super().__str__()})'
 
 
 class Post(BasePublicationModel):
@@ -113,7 +113,7 @@ class Post(BasePublicationModel):
         return reverse('blog:post_detail', args=[self.pk])
 
     def __str__(self):
-        return f'{self.title[:50]} ({self.created_at:%Y-%m-%d})'
+        return f'{self.title[:50]} ({super().__str__()})'
 
 
 class Comment(models.Model):
