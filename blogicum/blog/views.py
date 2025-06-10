@@ -48,9 +48,7 @@ class PostListView(ListView):
     template_name = "blog/index.html"
     context_object_name = "post_list"
     paginate_by = PAGINATE_BY
-    queryset = filter_and_annotate_posts(Post.objects.all()).annotate(
-        comment_count=Count("comments")
-    ).order_by("-pub_date")
+    queryset = filter_and_annotate_posts(Post.objects.all())
 
 
 class CategoryPostsView(ListView):
@@ -67,17 +65,7 @@ class CategoryPostsView(ListView):
         )
 
     def get_queryset(self):
-        category = self.get_category()
-        if self.request.user.is_authenticated:
-            author = self.request.user
-        else:
-            author = None
-        return (
-            filter_and_annotate_posts(category.posts.all())
-            .filter(author=author)
-            .annotate(comment_count=Count("comments"))
-            .order_by("-pub_date")
-        )
+        return filter_and_annotate_posts(self.get_category().posts.all())
 
     def get_context_data(self, **kwargs):
         return super().get_context_data(**kwargs, category=self.get_category())
@@ -91,9 +79,9 @@ class PostDetailView(BasePostMixin, DetailView):
 
     def get_object(self):
         post = super().get_object()
-        if not post.is_published and self.request.user != post.author:
-            raise Http404
-        return post
+        if self.request.user == post.author:
+            return post
+        return super().get_object(queryset=Post.objects.filter(is_published=True))
 
     def get_context_data(self, **kwargs):
         return super().get_context_data(
@@ -114,7 +102,7 @@ class PostCreateView(BasePostMixin, LoginRequiredMixin, CreateView):
         return super().form_valid(form)
 
     def get_success_url(self):
-        return reverse("blog:profile", args=[str(self.request.user.username)])
+        return reverse("blog:profile", args=[self.request.user.username])
 
 
 class PostUpdateView(BasePostMixin, OwnerRequiredMixin, UpdateView):
@@ -126,7 +114,7 @@ class PostUpdateView(BasePostMixin, OwnerRequiredMixin, UpdateView):
     template_name = "blog/create.html"
 
     def get_success_url(self):
-        return reverse(self.redirect_view_name,
+        return reverse("blog:post_detail",
                        args=[self.kwargs[self.pk_url_kwarg]])
 
 
