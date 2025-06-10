@@ -24,21 +24,21 @@ from .models import Category, Comment, Post, User
 PAGINATE_BY = 10
 
 
-def apply_published_filter(posts, apply_filters=True):
-    """Фильтрация опубликованных постов."""
+def filter_and_annotate_posts(posts, apply_filters=True,
+                              use_select_related=True, apply_sorting=True):
+    """Фильтрация, аннотирование и сортировка постов."""
     if apply_filters:
-        filtered_posts = posts.filter(
+        posts = posts.filter(
             is_published=True,
             category__is_published=True,
             pub_date__lte=timezone.now()
         )
-    else:
-        filtered_posts = posts
-    filtered_posts = filtered_posts.select_related(
-        "category", "location", "author"
-    )
-    filtered_posts = filtered_posts.annotate(comment_count=Count('comments'))
-    return filtered_posts
+    if use_select_related:
+        posts = posts.select_related("category", "location", "author")
+    if apply_sorting:
+        posts = posts.order_by("-pub_date")
+    posts = posts.annotate(comment_count=Count("comments"))
+    return posts
 
 
 class PostListView(ListView):
@@ -48,7 +48,7 @@ class PostListView(ListView):
     template_name = "blog/index.html"
     context_object_name = "post_list"
     paginate_by = PAGINATE_BY
-    queryset = apply_published_filter(Post.objects.all()).annotate(
+    queryset = filter_and_annotate_posts(Post.objects.all()).annotate(
         comment_count=Count("comments")
     ).order_by("-pub_date")
 
@@ -73,7 +73,7 @@ class CategoryPostsView(ListView):
         else:
             author = None
         return (
-            apply_published_filter(category.posts.all())
+            filter_and_annotate_posts(category.posts.all())
             .filter(author=author)
             .annotate(comment_count=Count("comments"))
             .order_by("-pub_date")
@@ -153,7 +153,7 @@ class ProfileView(BasePostMixin, ListView):
         user = self.get_user()
         posts = (
             user.posts.all() if self.request.user == user
-            else apply_published_filter(user.posts.all())
+            else filter_and_annotate_posts(user.posts.all())
         )
         return posts.select_related("category", "location").annotate(
             comment_count=Count("comments")
