@@ -39,7 +39,8 @@ def process_posts(posts=None, apply_filters=True,
     if use_select_related:
         posts = posts.select_related('category', 'location', 'author')
     if apply_annotation:
-        posts = posts.annotate(comment_count=Count('comments')).order_by(*Post._meta.ordering)
+        posts = posts.annotate(
+            comment_count=Count('comments')).order_by(*Post._meta.ordering)
     if ordering:
         posts = posts.order_by(*ordering)
     return posts
@@ -69,7 +70,8 @@ class CategoryPostsView(ListView):
         )
 
     def get_queryset(self):
-        return process_posts(self.get_category().posts.all(), ordering=['-pub_date'])
+        return process_posts(
+            self.get_category().posts.all(), ordering=['-pub_date'])
 
     def get_context_data(self, **kwargs):
         return super().get_context_data(**kwargs, category=self.get_category())
