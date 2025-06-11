@@ -1,7 +1,7 @@
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.http import Http404
 from django.shortcuts import redirect
-from django.urls import reverse
+from django.urls import reverse, reverse_lazy
 
 from .forms import CommentForm
 from .models import Comment, Post
@@ -14,6 +14,7 @@ class BasePostMixin:
     context_object_name = 'post'
     pk_url_kwarg = 'post_id'
     template_name = 'blog/create.html'
+    success_url = reverse_lazy('blog:index')
 
 
 class OwnerRequiredMixin:
@@ -47,3 +48,4 @@ class CommentObjectMixin:
     model = Comment
     pk_url_kwarg = 'comment_id'
     template_name = 'blog/comment.html'
+    success_url = reverse_lazy('blog:index')

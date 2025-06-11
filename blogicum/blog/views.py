@@ -1,8 +1,9 @@
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db.models import Count
 from django.shortcuts import get_object_or_404
-from django.urls import reverse, reverse_lazy
+from django.urls import reverse
 from django.utils import timezone
+from django.http import Http404
 from django.views.generic import (
     CreateView,
     DeleteView,
@@ -18,12 +19,14 @@ from .mixins import (
     CommentObjectMixin,
     OwnerRequiredMixin,
 )
-from .models import Category, Comment, Post, User
+from .models import Category, Post, User
 
 PAGINATE_BY = 10
 
 
-def process_posts(posts, apply_filters=True, use_select_related=True):
+def process_posts(posts, apply_filters=True,
+                  use_select_related=True,
+                  apply_annotation=True):
     """Фильтрация, аннотирование и сортировка постов."""
     if apply_filters:
         posts = posts.filter(
@@ -33,8 +36,9 @@ def process_posts(posts, apply_filters=True, use_select_related=True):
         )
     if use_select_related:
         posts = posts.select_related('category', 'location', 'author')
-    posts = posts.annotate(comment_count=Count('comments'))
-    posts = posts.order_by('-pub_date')
+    if apply_annotation:
+        posts = posts.annotate(comment_count=Count('comments'))
+    posts = posts.order_by(*Post._meta.ordering)
     return posts
 
 
@@ -45,9 +49,7 @@ class PostListView(ListView):
     template_name = 'blog/index.html'
     context_object_name = 'post_list'
     paginate_by = PAGINATE_BY
-
-    def get_queryset(self):
-        return process_posts(Post.objects.all())
+    queryset = process_posts(Post.objects.all())
 
 
 class CategoryPostsView(ListView):
@@ -80,11 +82,11 @@ class PostDetailView(BasePostMixin, DetailView):
         post = super().get_object()
         if self.request.user == post.author:
             return post
-        return super().get_object(
-            queryset=process_posts(Post.objects.all(),
-                                   apply_filters=True,
-                                   use_select_related=False)
-        )
+        post = Post.objects.filter(id=self.kwargs['post_id'],
+                                   is_published=True).first()
+        if post is None:
+            raise Http404
+        return post
 
     def get_context_data(self, **kwargs):
         return super().get_context_data(
@@ -124,12 +126,10 @@ class PostDeleteView(BasePostMixin, LoginRequiredMixin,
                      OwnerRequiredMixin, DeleteView):
     """Удаление поста."""
 
-    template_name = 'blog/create.html'
-    success_url = reverse_lazy('blog:index')
-    pk_url_kwarg = 'post_id'
+    pass
 
 
-class ProfileView(BasePostMixin, ListView):
+class ProfileView(ListView):
     """Профиль пользователя."""
 
     template_name = 'blog/profile.html'
@@ -140,10 +140,8 @@ class ProfileView(BasePostMixin, ListView):
 
     def get_queryset(self):
         author = self.get_author()
-        posts = author.posts.all()
-        return process_posts(posts,
-                             apply_filters=self.request.user != author,
-                             use_select_related=True)
+        return process_posts(author.posts.all(),
+                             apply_filters=self.request.user != author)
 
     def get_context_data(self, **kwargs):
         return super().get_context_data(
@@ -187,7 +185,4 @@ class CommentDeleteView(LoginRequiredMixin, OwnerRequiredMixin,
                         CommentObjectMixin, DeleteView):
     """Удаление комментария."""
 
-    model = Comment
-
-    def get_success_url(self):
-        return reverse('blog:post_detail', args=[self.kwargs['post_id']])
+    pass
