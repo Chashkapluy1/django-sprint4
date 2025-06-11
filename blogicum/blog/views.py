@@ -23,13 +23,10 @@ from .models import Category, Post, User
 PAGINATE_BY = 10
 
 
-def process_posts(posts=None, apply_filters=True,
+def process_posts(posts=Post.objects.all(), apply_filters=True,
                   use_select_related=True,
-                  apply_annotation=True,
-                  ordering=None):
+                  apply_annotation=True):
     """Фильтрация, аннотирование и сортировка постов."""
-    if posts is None:
-        posts = Post.objects.all()
     if apply_filters:
         posts = posts.filter(
             is_published=True,
@@ -41,8 +38,6 @@ def process_posts(posts=None, apply_filters=True,
     if apply_annotation:
         posts = posts.annotate(
             comment_count=Count('comments')).order_by(*Post._meta.ordering)
-    if ordering:
-        posts = posts.order_by(*ordering)
     return posts
 
 
@@ -53,7 +48,7 @@ class PostListView(ListView):
     template_name = 'blog/index.html'
     context_object_name = 'post_list'
     paginate_by = PAGINATE_BY
-    queryset = process_posts(ordering=['-pub_date'])
+    queryset = process_posts()
 
 
 class CategoryPostsView(ListView):
@@ -70,11 +65,7 @@ class CategoryPostsView(ListView):
         )
 
     def get_queryset(self):
-        return process_posts(
-            self.get_category().posts.all(), ordering=['-pub_date'])
-
-    def get_context_data(self, **kwargs):
-        return super().get_context_data(**kwargs, category=self.get_category())
+        return process_posts(self.get_category().posts.all())
 
 
 class PostDetailView(BasePostMixin, DetailView):
@@ -84,11 +75,10 @@ class PostDetailView(BasePostMixin, DetailView):
     pk_url_kwarg = 'post_id'
 
     def get_object(self):
-        post = super().get_object()
-        if self.request.user == post.author:
-            return post
-        filtered_posts = process_posts(Post.objects.all())
-        return super().get_object(filtered_posts)
+        post = process_posts(Post.objects.all(),
+                             use_select_related=False,
+                             apply_annotation=False).first()
+        return post
 
     def get_context_data(self, **kwargs):
         return super().get_context_data(
@@ -142,9 +132,7 @@ class ProfileView(ListView):
         author = self.get_author()
         return process_posts(
             author.posts.all(),
-            apply_filters=self.request.user != author,
-            ordering=['-pub_date']
-        )
+            apply_filters=self.request.user != author)
 
     def get_context_data(self, **kwargs):
         return super().get_context_data(
