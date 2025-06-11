@@ -126,8 +126,6 @@ class PostDeleteView(BasePostMixin, LoginRequiredMixin,
                      OwnerRequiredMixin, DeleteView):
     """Удаление поста."""
 
-    pass
-
 
 class ProfileView(ListView):
     """Профиль пользователя."""
@@ -178,11 +176,7 @@ class CommentUpdateView(CommentBaseMixin, OwnerRequiredMixin,
                         CommentObjectMixin, UpdateView):
     """Редактирование комментария."""
 
-    pass
-
 
 class CommentDeleteView(LoginRequiredMixin, OwnerRequiredMixin,
                         CommentObjectMixin, DeleteView):
     """Удаление комментария."""
-
-    pass
