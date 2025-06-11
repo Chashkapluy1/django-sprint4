@@ -12,6 +12,8 @@ class BasePostMixin:
 
     model = Post
     context_object_name = 'post'
+    pk_url_kwarg = 'post_id'
+    template_name = 'blog/create.html'
 
 
 class OwnerRequiredMixin:
@@ -44,3 +46,4 @@ class CommentObjectMixin:
 
     model = Comment
     pk_url_kwarg = 'comment_id'
+    template_name = 'blog/comment.html'

@@ -180,8 +180,7 @@ class CommentUpdateView(CommentBaseMixin, OwnerRequiredMixin,
                         CommentObjectMixin, UpdateView):
     """Редактирование комментария."""
 
-    template_name = 'blog/comment.html'
-    pk_url_kwarg = 'comment_id'
+    pass
 
 
 class CommentDeleteView(LoginRequiredMixin, OwnerRequiredMixin,
@@ -189,8 +188,6 @@ class CommentDeleteView(LoginRequiredMixin, OwnerRequiredMixin,
     """Удаление комментария."""
 
     model = Comment
-    template_name = 'blog/comment.html'
-    pk_url_kwarg = 'comment_id'
 
     def get_success_url(self):
         return reverse('blog:post_detail', args=[self.kwargs['post_id']])
