@@ -3,7 +3,6 @@ from django.db.models import Count
 from django.shortcuts import get_object_or_404
 from django.urls import reverse
 from django.utils import timezone
-from django.http import Http404
 from django.views.generic import (
     CreateView,
     DeleteView,
@@ -24,10 +23,13 @@ from .models import Category, Post, User
 PAGINATE_BY = 10
 
 
-def process_posts(posts, apply_filters=True,
+def process_posts(posts=None, apply_filters=True,
                   use_select_related=True,
-                  apply_annotation=True):
+                  apply_annotation=True,
+                  ordering=None):
     """Фильтрация, аннотирование и сортировка постов."""
+    if posts is None:
+        posts = Post.objects.all()
     if apply_filters:
         posts = posts.filter(
             is_published=True,
@@ -37,8 +39,9 @@ def process_posts(posts, apply_filters=True,
     if use_select_related:
         posts = posts.select_related('category', 'location', 'author')
     if apply_annotation:
-        posts = posts.annotate(comment_count=Count('comments'))
-    posts = posts.order_by(*Post._meta.ordering)
+        posts = posts.annotate(comment_count=Count('comments')).order_by(*Post._meta.ordering)
+    if ordering:
+        posts = posts.order_by(*ordering)
     return posts
 
 
@@ -49,7 +52,7 @@ class PostListView(ListView):
     template_name = 'blog/index.html'
     context_object_name = 'post_list'
     paginate_by = PAGINATE_BY
-    queryset = process_posts(Post.objects.all())
+    queryset = process_posts(ordering=['-pub_date'])
 
 
 class CategoryPostsView(ListView):
@@ -66,7 +69,7 @@ class CategoryPostsView(ListView):
         )
 
     def get_queryset(self):
-        return process_posts(self.get_category().posts.all())
+        return process_posts(self.get_category().posts.all(), ordering=['-pub_date'])
 
     def get_context_data(self, **kwargs):
         return super().get_context_data(**kwargs, category=self.get_category())
@@ -82,11 +85,8 @@ class PostDetailView(BasePostMixin, DetailView):
         post = super().get_object()
         if self.request.user == post.author:
             return post
-        post = Post.objects.filter(id=self.kwargs['post_id'],
-                                   is_published=True).first()
-        if post is None:
-            raise Http404
-        return post
+        filtered_posts = process_posts(Post.objects.all())
+        return super().get_object(filtered_posts)
 
     def get_context_data(self, **kwargs):
         return super().get_context_data(
@@ -138,8 +138,11 @@ class ProfileView(ListView):
 
     def get_queryset(self):
         author = self.get_author()
-        return process_posts(author.posts.all(),
-                             apply_filters=self.request.user != author)
+        return process_posts(
+            author.posts.all(),
+            apply_filters=self.request.user != author,
+            ordering=['-pub_date']
+        )
 
     def get_context_data(self, **kwargs):
         return super().get_context_data(
