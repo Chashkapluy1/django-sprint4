@@ -75,10 +75,13 @@ class PostDetailView(BasePostMixin, DetailView):
     pk_url_kwarg = 'post_id'
 
     def get_object(self):
-        post = process_posts(Post.objects.all(),
-                             use_select_related=False,
-                             apply_annotation=False).first()
-        return post
+        post = super().get_object()
+        if self.request.user == post.author:
+            return post
+        return super().get_object(process_posts(
+            use_select_related=False,
+            apply_annotation=False
+        ))
 
     def get_context_data(self, **kwargs):
         return super().get_context_data(
